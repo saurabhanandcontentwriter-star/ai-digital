@@ -1,21 +1,41 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;500;700&family=JetBrains+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
+:root {
+  --color-bg: #f8fafc;
+  --color-surface: rgba(255, 255, 255, 0.8);
+  --color-accent: #2563EB;
+  --color-accent-secondary: #9333EA;
+  --color-line: rgba(0, 0, 0, 0.05);
+  --color-text-primary: #1e293b;
+  --color-text-secondary: #64748b;
+}
+
+.dark {
+  --color-bg: #05070A;
+  --color-surface: rgba(15, 18, 25, 0.4);
+  --color-accent: #3b82f6;
+  --color-accent-secondary: #a855f7;
+  --color-line: rgba(255, 255, 255, 0.05);
+  --color-text-primary: #f1f5f9;
+  --color-text-secondary: #94a3b8;
+}
+
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Space Grotesk", sans-serif;
   --font-mono: "JetBrains Mono", monospace;
   
-  --color-bg: #05070A;
-  --color-surface: rgba(15, 18, 25, 0.4);
-  --color-accent: #2563EB;
-  --color-accent-secondary: #9333EA;
-  --color-line: rgba(255, 255, 255, 0.05);
+  --color-bg: var(--color-bg);
+  --color-surface: var(--color-surface);
+  --color-accent: var(--color-accent);
+  --color-accent-secondary: var(--color-accent-secondary);
+  --color-line: var(--color-line);
 }
 
 @layer base {
   body {
-    @apply bg-bg text-slate-200 font-sans antialiased selection:bg-accent/30 selection:text-white;
+    @apply bg-bg text-[var(--color-text-primary)] font-sans antialiased selection:bg-accent/30 selection:text-white transition-colors duration-300;
   }
 }
 
@@ -32,7 +52,7 @@
 }
 
 .nav-blur {
-  @apply bg-bg/50 backdrop-blur-md border-b border-white/5;
+  @apply bg-bg/70 backdrop-blur-md border-b border-line;
 }
 
 .btn-primary {
@@ -40,5 +60,17 @@
 }
 
 .btn-secondary {
-  @apply bg-white/5 border border-white/10 hover:bg-white/10 text-white rounded-xl font-bold transition-all;
+  @apply bg-white/5 border border-line hover:bg-white/10 text-[var(--color-text-primary)] rounded-xl font-bold transition-all;
+}
+
+.bg-bg {
+  background-color: var(--color-bg);
+}
+
+.text-primary {
+  color: var(--color-text-primary);
+}
+
+.text-secondary {
+  color: var(--color-text-secondary);
 }

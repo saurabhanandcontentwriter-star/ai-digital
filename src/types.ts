@@ -23,11 +23,6 @@ export interface ABTestResult {
   rationale: string;
 }
 
-export interface Slogan {
-  text: string;
-  style: string;
-}
-
 export interface BlogArticle {
   title: string;
   content: string;

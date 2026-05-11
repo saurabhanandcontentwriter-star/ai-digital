@@ -29,7 +29,9 @@ import {
   Volume2,
   VolumeX,
   Languages,
-  BookOpen
+  BookOpen,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { io, Socket } from 'socket.io-client';
@@ -52,14 +54,12 @@ import {
   generateAudienceSegments, 
   generateCampaignAnalytics,
   compareCreatives,
-  generateSlogan,
   generateCompetitorAnalysis,
   generateBlogArticle,
   type ContentIdeas,
   type AudienceSegment,
   type CampaignAnalytics,
   type ABTestResult,
-  type Slogan,
   type CompetitorAnalysis,
   type BlogArticle
 } from './services/aiService';
@@ -67,12 +67,30 @@ import {
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    if (typeof window !== 'undefined') {
+      return document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+    }
+    return 'dark';
+  });
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+  };
 
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'nav-blur py-3' : 'bg-transparent py-5'}`}>
@@ -81,14 +99,21 @@ const Navbar = () => {
           <div className="w-8 h-8 bg-gradient-to-tr from-blue-500 to-purple-500 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:rotate-12 transition-transform">
             <BrainCircuit className="text-white" size={20} />
           </div>
-          <span className="font-display font-bold text-xl tracking-tight text-white uppercase">AdMind<span className="text-blue-500 italic lowercase tracking-wider">AI</span></span>
+          <span className="font-display font-bold text-xl tracking-tight text-primary uppercase">AdMind<span className="text-blue-500 italic lowercase tracking-wider">AI</span></span>
         </div>
 
-        <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-400">
-          <a href="#services" className="hover:text-white transition-colors">Platform</a>
-          <a href="#dashboard" className="hover:text-white transition-colors">KPIs</a>
-          <a href="#toolkit" className="hover:text-white transition-colors">Tools</a>
-          <a href="#demo" className="hover:text-white transition-colors">Solutions</a>
+        <div className="hidden md:flex items-center gap-8 text-sm font-medium text-secondary">
+          <a href="#services" className="hover:text-primary transition-colors">Platform</a>
+          <a href="#dashboard" className="hover:text-primary transition-colors">KPIs</a>
+          <a href="#toolkit" className="hover:text-primary transition-colors">Tools</a>
+          <a href="#demo" className="hover:text-primary transition-colors">Solutions</a>
+
+          <button 
+            onClick={toggleTheme}
+            className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-all active:scale-90"
+          >
+            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
 
           <a href="#connect" className="px-6 py-2 bg-white text-black rounded-full text-sm font-bold shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:bg-slate-200 transition-all active:scale-95">
             Launch Campaign
@@ -106,12 +131,12 @@ const Navbar = () => {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="absolute top-full left-0 right-0 bg-[#05070A]/95 backdrop-blur-xl border-b border-white/5 p-6 flex flex-col gap-6 md:hidden"
+            className="absolute top-full left-0 right-0 bg-bg/95 backdrop-blur-xl border-b border-line p-6 flex flex-col gap-6 md:hidden"
           >
-            <a href="#services" onClick={() => setIsOpen(false)} className="text-lg">Services</a>
-            <a href="#dashboard" onClick={() => setIsOpen(false)} className="text-lg">KPIs</a>
-            <a href="#toolkit" onClick={() => setIsOpen(false)} className="text-lg">Tools</a>
-            <a href="#demo" onClick={() => setIsOpen(false)} className="text-lg">AI Engine</a>
+            <a href="#services" onClick={() => setIsOpen(false)} className="text-lg text-primary">Services</a>
+            <a href="#dashboard" onClick={() => setIsOpen(false)} className="text-lg text-primary">KPIs</a>
+            <a href="#toolkit" onClick={() => setIsOpen(false)} className="text-lg text-primary">Tools</a>
+            <a href="#demo" onClick={() => setIsOpen(false)} className="text-lg text-primary">AI Engine</a>
 
             <a href="#connect" onClick={() => setIsOpen(false)} className="bg-blue-600 text-white py-4 rounded-xl font-bold text-center">Launch Campaign</a>
           </motion.div>
@@ -139,11 +164,11 @@ const Hero = () => {
             <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse"></span>
             Predictive ROI Engine 2.0
           </div>
-          <h1 className="text-6xl md:text-7xl font-extrabold text-white leading-[1.05] tracking-tight mb-8">
+          <h1 className="text-6xl md:text-7xl font-extrabold text-primary leading-[1.05] tracking-tight mb-8">
             Marketing that <br />
             <span className="gradient-text">Thinks for Itself.</span>
           </h1>
-          <p className="text-lg text-slate-400 max-w-md leading-relaxed mb-10">
+          <p className="text-lg text-secondary max-w-md leading-relaxed mb-10">
             Our neural network analyzes billions of signals to deploy high-converting campaigns across every channel, automatically.
           </p>
           <div className="flex flex-col sm:flex-row gap-6">
@@ -169,13 +194,13 @@ const Hero = () => {
         >
           <div className="glass-card p-6 shadow-[0_0_50px_rgba(37,99,235,0.1)]">
             <div className="flex items-center justify-between mb-8">
-              <span className="text-sm font-semibold text-slate-300">Real-time Optimization</span>
+              <span className="text-sm font-semibold text-secondary">Real-time Optimization</span>
               <span className="text-xs text-blue-400 font-mono tracking-tighter uppercase">Active Engine · 12ms Latency</span>
             </div>
             
             <div className="space-y-4">
-              <div className="h-14 bg-white/5 rounded-2xl flex items-center px-6 justify-between border border-white/5">
-                <span className="text-sm font-medium">Conversion Rate</span>
+              <div className="h-14 bg-white/5 rounded-2xl flex items-center px-6 justify-between border border-line">
+                <span className="text-sm font-medium text-primary">Conversion Rate</span>
                 <div className="flex items-center gap-2">
                   <div className="h-2 w-16 bg-blue-500/20 rounded-full overflow-hidden">
                     <motion.div 
@@ -190,13 +215,13 @@ const Hero = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="h-28 bg-blue-500/5 rounded-2xl p-5 border border-blue-500/10">
-                  <div className="text-xs text-slate-500 mb-2">Cost per Acq.</div>
-                  <div className="text-3xl font-bold text-white tracking-tight">$12.40</div>
+                  <div className="text-xs text-secondary mb-2">Cost per Acq.</div>
+                  <div className="text-3xl font-bold text-primary tracking-tight">$12.40</div>
                   <div className="text-[10px] text-blue-400 mt-2 font-mono">-15% Performance Gain</div>
                 </div>
                 <div className="h-28 bg-purple-500/5 rounded-2xl p-5 border border-purple-500/10">
-                  <div className="text-xs text-slate-500 mb-2">Neural ROAS</div>
-                  <div className="text-3xl font-bold text-white tracking-tight">8.4<span className="text-purple-400">x</span></div>
+                  <div className="text-xs text-secondary mb-2">Neural ROAS</div>
+                  <div className="text-3xl font-bold text-primary tracking-tight">8.4<span className="text-purple-400">x</span></div>
                   <div className="text-[10px] text-purple-400 mt-2 font-mono">Peak Signal Efficiency</div>
                 </div>
               </div>
@@ -401,7 +426,7 @@ const AIDemo = () => {
 };
 
 const AIToolkit = () => {
-  const [activeTab, setActiveTab] = useState<'content' | 'audience' | 'analytics' | 'abtest' | 'slogan' | 'competitor' | 'blog'>('content');
+  const [activeTab, setActiveTab] = useState<'content' | 'audience' | 'analytics' | 'abtest' | 'competitor' | 'blog'>('content');
   const [loading, setLoading] = useState(false);
   const [inputData, setInputData] = useState('');
   const [competitorUrls, setCompetitorUrls] = useState('');
@@ -450,9 +475,6 @@ const AIToolkit = () => {
       } else if (activeTab === 'abtest') {
         const data = await compareCreatives(versionA, versionB, targetAudience);
         setResult(data);
-      } else if (activeTab === 'slogan') {
-        const data = await generateSlogan(inputData);
-        setResult(data);
       } else if (activeTab === 'competitor') {
         const data = await generateCompetitorAnalysis(inputData, competitorUrls);
         setResult(data);
@@ -472,7 +494,6 @@ const AIToolkit = () => {
     { id: 'audience', label: 'Audience Segments', icon: <Users size={18} /> },
     { id: 'analytics', label: 'Campaign Analyst', icon: <PieChart size={18} /> },
     { id: 'abtest', label: 'A/B Creative Lab', icon: <Split size={18} /> },
-    { id: 'slogan', label: 'Slogan Smith', icon: <Zap size={18} /> },
     { id: 'competitor', label: 'Competitor Intel', icon: <Sword size={18} /> },
     { id: 'blog', label: 'Neural Blog', icon: <FileText size={18} /> },
   ];
@@ -518,7 +539,6 @@ const AIToolkit = () => {
                       {activeTab === 'content' && 'Describe your business or product'}
                       {activeTab === 'audience' && 'Paste raw user data or customer profiles'}
                       {activeTab === 'analytics' && 'Provide campaign performance data (CPC, CTR, Conversion)'}
-                      {activeTab === 'slogan' && 'What is your brand or product about?'}
                     </label>
                     <textarea
                       value={inputData}
@@ -528,8 +548,6 @@ const AIToolkit = () => {
                           ? 'e.g., A boutique plant shop specializing in rare succulents for city apartments...' 
                           : activeTab === 'audience'
                           ? 'e.g., Active in last 3 months, High average order value, Prefers mobile shopping...'
-                          : activeTab === 'slogan'
-                          ? 'e.g., A high-performance electric mountain bike for off-road enthusiasts...'
                           : activeTab === 'competitor'
                           ? 'Describe your business model and target market...'
                           : activeTab === 'blog'
@@ -796,21 +814,6 @@ const AIToolkit = () => {
                           </div>
                         </div>
                       )}
-
-                      {activeTab === 'slogan' && (
-                        <div className="space-y-6">
-                           <h4 className="text-blue-500 font-bold text-xs uppercase tracking-[0.2em]">Synthesized Brand Mantras</h4>
-                           <div className="grid gap-4">
-                              {result.map((slogan: any, i: number) => (
-                                <div key={i} className="p-6 bg-white/5 rounded-2xl border border-white/5 hover:border-blue-500/20 transition-all group">
-                                  <div className="text-[10px] text-slate-500 uppercase mb-2 font-mono tracking-widest">{slogan.style}</div>
-                                  <div className="text-xl font-bold text-white group-hover:text-blue-400 transition-colors">"{slogan.text}"</div>
-                                </div>
-                              ))}
-                           </div>
-                        </div>
-                      )}
-
                       {activeTab === 'competitor' && (
                         <div className="space-y-10">
                            <div>
@@ -989,12 +992,12 @@ const AIDashboard = () => {
   ];
 
   return (
-    <section id="dashboard" className="py-32 bg-[#05070A]/50 relative overflow-hidden">
+    <section id="dashboard" className="py-32 bg-bg/50 relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-8">
           <div className="max-w-2xl">
-            <h2 className="text-4xl md:text-5xl font-extrabold text-white mb-6 tracking-tight">Performance <span className="text-blue-500">Analytics</span></h2>
-            <p className="text-slate-400 text-lg leading-relaxed">
+            <h2 className="text-4xl md:text-5xl font-extrabold text-primary mb-6 tracking-tight">Performance <span className="text-blue-500">Analytics</span></h2>
+            <p className="text-secondary text-lg leading-relaxed">
               Real-time visualization of the engine's impact. Monitoring neural efficiency, ROI velocity, and operational compression.
             </p>
           </div>
@@ -1004,8 +1007,8 @@ const AIDashboard = () => {
                 <Activity className="text-emerald-500" size={20} />
               </div>
               <div>
-                <div className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Network Load</div>
-                <div className="text-lg font-bold text-white">Optimal</div>
+                <div className="text-[10px] text-secondary uppercase font-bold tracking-widest">Network Load</div>
+                <div className="text-lg font-bold text-primary">Optimal</div>
               </div>
             </div>
           </div>
@@ -1013,18 +1016,18 @@ const AIDashboard = () => {
 
         <div className="grid lg:grid-cols-3 gap-8">
           {/* KPI Card 1: Success Rate */}
-          <div className="lg:col-span-2 glass-card p-8 border-white/10">
+          <div className="lg:col-span-2 glass-card p-8 border-line">
             <div className="flex items-center justify-between mb-10">
               <div>
-                <h3 className="text-white font-bold text-lg mb-1 flex items-center gap-2">
+                <h3 className="text-primary font-bold text-lg mb-1 flex items-center gap-2">
                   <Target size={18} className="text-blue-500" />
                   Campaign Success Rate
                 </h3>
-                <p className="text-xs text-slate-500">Neural accuracy scaling over deployment cycles</p>
+                <p className="text-xs text-secondary">Neural accuracy scaling over deployment cycles</p>
               </div>
               <div className="text-right">
                 <div className="text-2xl font-bold text-emerald-400">94.2%</div>
-                <div className="text-[10px] text-slate-500 font-mono tracking-widest uppercase">Current Peak</div>
+                <div className="text-[10px] text-secondary font-mono tracking-widest uppercase">Current Peak</div>
               </div>
             </div>
             

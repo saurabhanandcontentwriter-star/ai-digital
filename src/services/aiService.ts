@@ -3,7 +3,6 @@ import {
   type AudienceSegment, 
   type CampaignAnalytics, 
   type ABTestResult, 
-  type Slogan,
   type CompetitorAnalysis,
   type BlogArticle 
 } from "../types";
@@ -48,16 +47,6 @@ export async function compareCreatives(versionA: string, versionB: string, targe
   return response.json();
 }
 
-export async function generateSlogan(description: string): Promise<Slogan[]> {
-  const response = await fetch('/api/ai/slogan', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ description })
-  });
-  if (!response.ok) throw new Error('Failed to generate slogans');
-  return response.json();
-}
-
 export async function generateBlogArticle(topic: string, keywords: string): Promise<BlogArticle> {
   const response = await fetch('/api/ai/blog-article', {
     method: 'POST',
@@ -78,4 +67,4 @@ export async function generateCompetitorAnalysis(businessDescription: string, co
   return response.json();
 }
 
-export type { ContentIdeas, AudienceSegment, CampaignAnalytics, ABTestResult, Slogan, CompetitorAnalysis, BlogArticle };
+export type { ContentIdeas, AudienceSegment, CampaignAnalytics, ABTestResult, CompetitorAnalysis, BlogArticle };

@@ -254,34 +254,6 @@ async function startServer() {
     }
   });
 
-  app.post('/api/ai/slogan', async (req, res) => {
-    try {
-      const { description } = req.body;
-      const result = await genAI.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: `Generate 5 catchy marketing slogans for: ${description}`,
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                text: { type: Type.STRING },
-                style: { type: Type.STRING }
-              },
-              required: ["text", "style"]
-            }
-          },
-          systemInstruction: "You are a world-class copywriter. Generate catchy, memorable slogans."
-        }
-      });
-      res.json(JSON.parse(result.text));
-    } catch (error) {
-      res.status(500).json({ error: String(error) });
-    }
-  });
-
   app.post('/api/leads', async (req, res) => {
     const { email, company, interest } = req.body;
     const hubspotKey = process.env.HUBSPOT_ACCESS_TOKEN;
