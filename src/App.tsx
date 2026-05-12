@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { 
   Zap, 
   BarChart3, 
@@ -7,6 +8,7 @@ import {
   BrainCircuit, 
   ArrowRight, 
   CheckCircle2, 
+  Check,
   Menu, 
   X, 
   Globe, 
@@ -24,6 +26,7 @@ import {
   Clock,
   Activity,
   ShieldAlert,
+  AlertCircle,
   Sword,
   FileText,
   Volume2,
@@ -31,7 +34,12 @@ import {
   Languages,
   BookOpen,
   Sun,
-  Moon
+  Moon,
+  Settings as SettingsIcon,
+  Key,
+  Shield,
+  Bell,
+  Database
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { io, Socket } from 'socket.io-client';
@@ -55,16 +63,16 @@ import {
   generateCampaignAnalytics,
   compareCreatives,
   generateCompetitorAnalysis,
-  generateBlogArticle,
+  summarizeContent,
   type ContentIdeas,
   type AudienceSegment,
   type CampaignAnalytics,
   type ABTestResult,
   type CompetitorAnalysis,
-  type BlogArticle
+  type ContentSummary
 } from './services/aiService';
 
-const Navbar = () => {
+const Navbar = ({ onOpenSettings }: { onOpenSettings: () => void }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -108,12 +116,23 @@ const Navbar = () => {
           <a href="#toolkit" className="hover:text-primary transition-colors">Tools</a>
           <a href="#demo" className="hover:text-primary transition-colors">Solutions</a>
 
-          <button 
-            onClick={toggleTheme}
-            className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-all active:scale-90"
-          >
-            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-          </button>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={toggleTheme}
+              className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-all active:scale-90"
+              title="Toggle Theme"
+            >
+              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+
+            <button 
+              onClick={onOpenSettings}
+              className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-all active:scale-90"
+              title="User Settings"
+            >
+              <SettingsIcon size={18} />
+            </button>
+          </div>
 
           <a href="#connect" className="px-6 py-2 bg-white text-black rounded-full text-sm font-bold shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:bg-slate-200 transition-all active:scale-95">
             Launch Campaign
@@ -299,25 +318,25 @@ const Services = () => {
 
 const AIDemo = () => {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<null | { score: number, insight: string }>(null);
 
   const runAnalysis = async () => {
     setLoading(true);
     setResult(null);
+    setError(null);
     try {
-      const response = await fetch('/api/ai/analytics', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ campaignData: "Simulated market data for a generic AI-first marketing platform." })
-      });
-      const data = await response.json();
+      const data = await generateCampaignAnalytics("Simulated market data for a generic AI-first marketing platform.");
+      
       setLoading(false);
       setResult({
         score: Math.floor(Math.random() * 15) + 85,
         insight: data.prediction || "Campaign signal parity reached. ROI threshold projection: +31.4% with current creative trajectory."
       });
-    } catch (err) {
+    } catch (err: any) {
       setLoading(false);
+      setError(err.message || 'An error occurred during synthesis.');
+      // Optional fallback
       setResult({
         score: 91,
         insight: "Neural pathways temporarily offline. Reverting to base projection: High-conversion potential in upper tier segments."
@@ -406,13 +425,27 @@ const AIDemo = () => {
               
               <div className="p-5 rounded-2xl bg-white/5 border border-white/5 space-y-3">
                 <div className="text-[10px] text-blue-400 font-bold uppercase tracking-widest italic">Synthetic Insight</div>
+                {error && (
+                  <div className="flex flex-col gap-2 mb-2 p-3 bg-red-500/10 rounded-lg border border-red-500/20">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle size={12} className="text-red-500" />
+                      <span className="text-[10px] text-red-400 font-mono uppercase">Simulation_Fault_Detected</span>
+                    </div>
+                    <p className="text-[10px] text-red-300 font-mono leading-tight">
+                      {error}
+                    </p>
+                  </div>
+                )}
                 <p className="text-sm text-slate-400 leading-relaxed font-mono">
                   "{result.insight}"
                 </p>
               </div>
 
               <button 
-                onClick={() => setResult(null)}
+                onClick={() => {
+                  setResult(null);
+                  setError(null);
+                }}
                 className="text-xs text-slate-600 hover:text-white transition-colors uppercase tracking-widest font-bold"
               >
                 Reset Engine
@@ -425,43 +458,43 @@ const AIDemo = () => {
   );
 };
 
+const CAMPAIGN_TEMPLATES = [
+  {
+    name: "Product Launch",
+    icon: <Zap size={14} />,
+    data: "Campaign: Summer Collection Launch\nFacebook Ads: $2,500 spend, 12,400 impressions, 450 clicks, 12 sales\nInstagram: $1,200 spend, 8,500 reach, 310 link clicks, 8 sales\nEmail: 5,000 sent, 24% open rate, 3.2% CTR, 5 conversions\nTarget: ROI 3.0x, CPA < $45",
+  },
+  {
+    name: "SaaS Retention",
+    icon: <Users size={14} />,
+    data: "Segment: Expired Trial Users (Last 30 Days)\nEmail Sequence: 1,200 active threads, 42% re-engagement, 8% conversion to basic tier\nIn-app Notification: 15,000 impressions, 1,200 clicks, 150 reactivations\nChurn: High in first 48 hours post-trial\nGoal: Reduce churn by 15%, Increase LTV",
+  },
+  {
+    name: "Brand Lift",
+    icon: <Activity size={14} />,
+    data: "Video Ad: $5,000 budget, YouTube/TikTok, 150k completed views, 0.8% CTR\nDisplay: 1M impressions, 2,500 clicks, CPA $2.00\nInfluencer: 3 posts, 45k engagement rate, 1,500 direct site visits\nMetric: CPM $33.33, Lift in search volume 12%",
+  }
+];
+
 const AIToolkit = () => {
-  const [activeTab, setActiveTab] = useState<'content' | 'audience' | 'analytics' | 'abtest' | 'competitor' | 'blog'>('content');
+  const [activeTab, setActiveTab] = useState<'content' | 'audience' | 'analytics' | 'abtest' | 'competitor' | 'summarizer'>('content');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [inputData, setInputData] = useState('');
   const [competitorUrls, setCompetitorUrls] = useState('');
-  const [keywords, setKeywords] = useState('');
   const [versionA, setVersionA] = useState('');
   const [versionB, setVersionB] = useState('');
   const [targetAudience, setTargetAudience] = useState('');
   const [result, setResult] = useState<any>(null);
-  const [isSpeaking, setIsSpeaking] = useState(false);
-
-  const speak = (text: string) => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.onstart = () => setIsSpeaking(true);
-      utterance.onend = () => setIsSpeaking(false);
-      utterance.rate = 1.0;
-      utterance.pitch = 1.0;
-      window.speechSynthesis.speak(utterance);
-    }
-  };
-
-  const stopSpeaking = () => {
-    window.speechSynthesis.cancel();
-    setIsSpeaking(false);
-  };
 
   const handleGenerate = async () => {
-    if (activeTab !== 'abtest' && activeTab !== 'competitor' && activeTab !== 'blog' && !inputData.trim()) return;
+    if (activeTab !== 'abtest' && activeTab !== 'competitor' && !inputData.trim()) return;
     if (activeTab === 'competitor' && (!inputData.trim() || !competitorUrls.trim())) return;
-    if (activeTab === 'blog' && (!inputData.trim())) return;
     if (activeTab === 'abtest' && (!versionA.trim() || !versionB.trim() || !targetAudience.trim())) return;
     
     setLoading(true);
     setResult(null);
+    setError(null);
     try {
       if (activeTab === 'content') {
         const data = await generateContentIdeas(inputData);
@@ -478,12 +511,13 @@ const AIToolkit = () => {
       } else if (activeTab === 'competitor') {
         const data = await generateCompetitorAnalysis(inputData, competitorUrls);
         setResult(data);
-      } else if (activeTab === 'blog') {
-        const data = await generateBlogArticle(inputData, keywords);
+      } else if (activeTab === 'summarizer') {
+        const data = await summarizeContent(inputData);
         setResult(data);
       }
-    } catch (error) {
-      console.error(error);
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -495,7 +529,7 @@ const AIToolkit = () => {
     { id: 'analytics', label: 'Campaign Analyst', icon: <PieChart size={18} /> },
     { id: 'abtest', label: 'A/B Creative Lab', icon: <Split size={18} /> },
     { id: 'competitor', label: 'Competitor Intel', icon: <Sword size={18} /> },
-    { id: 'blog', label: 'Neural Blog', icon: <FileText size={18} /> },
+    { id: 'summarizer', label: 'Synth Summarizer', icon: <RefreshCw size={18} /> },
   ];
 
   return (
@@ -516,6 +550,7 @@ const AIToolkit = () => {
                 onClick={() => {
                   setActiveTab(tab.id as any);
                   setResult(null);
+                  setError(null);
                   setInputData('');
                 }}
                 className={`flex-1 py-6 flex items-center justify-center gap-3 transition-all ${
@@ -536,6 +571,20 @@ const AIToolkit = () => {
                 {activeTab !== 'abtest' ? (
                   <>
                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">
+                      {activeTab === 'analytics' && (
+                        <div className="flex flex-wrap gap-2 mb-4">
+                          {CAMPAIGN_TEMPLATES.map((template, idx) => (
+                            <button
+                              key={idx}
+                              onClick={() => setInputData(template.data)}
+                              className="px-3 py-1.5 bg-blue-500/5 hover:bg-blue-500/10 border border-blue-500/10 rounded-lg text-[10px] text-blue-400 font-bold uppercase tracking-wider flex items-center gap-2 transition-all active:scale-95"
+                            >
+                              {template.icon}
+                              {template.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                       {activeTab === 'content' && 'Describe your business or product'}
                       {activeTab === 'audience' && 'Paste raw user data or customer profiles'}
                       {activeTab === 'analytics' && 'Provide campaign performance data (CPC, CTR, Conversion)'}
@@ -550,8 +599,6 @@ const AIToolkit = () => {
                           ? 'e.g., Active in last 3 months, High average order value, Prefers mobile shopping...'
                           : activeTab === 'competitor'
                           ? 'Describe your business model and target market...'
-                          : activeTab === 'blog'
-                          ? 'What is the topic of the blog? (e.g., The Future of AI in Crypto Marketing...)'
                           : 'e.g., Facebook Ads: $500 spend, 250 clicks, 12 sales, ROI 1.5x...'
                       }
                       className="w-full h-48 bg-bg border border-white/10 rounded-2xl p-6 text-slate-300 placeholder:text-slate-700 focus:outline-none focus:border-blue-500/50 transition-all resize-none mb-6"
@@ -569,18 +616,12 @@ const AIToolkit = () => {
                       </div>
                     )}
 
-                    {activeTab === 'blog' && (
-                      <div className="mb-6">
-                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Target Keywords (Optional)</label>
-                        <input 
-                          value={keywords}
-                          onChange={(e) => setKeywords(e.target.value)}
-                          placeholder="e.g., neural marketing, predictive ROI, AI automation..."
-                          className="w-full bg-bg border border-white/10 rounded-xl p-4 text-slate-300 placeholder:text-slate-700 focus:outline-none focus:border-blue-500/50 transition-all"
-                        />
-                      </div>
-                    )}
-                  </>
+                      {activeTab === 'summarizer' && (
+                         <div className="mb-6">
+                           <p className="text-[10px] text-slate-500 italic mt-2">Paste long-form reports, blog drafts, or market analyses for instant neural compression.</p>
+                         </div>
+                      )}
+                    </>
                 ) : (
                   <div className="space-y-4 mb-6">
                     <div>
@@ -626,6 +667,41 @@ const AIToolkit = () => {
                   )}
                   {loading ? 'Synthesizing...' : `Generate ${tabs.find(t => t.id === activeTab)?.label}`}
                 </button>
+
+                <AnimatePresence>
+                  {error && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0, y: 10 }}
+                      animate={{ opacity: 1, height: 'auto', y: 0 }}
+                      exit={{ opacity: 0, height: 0, y: 10 }}
+                      className="mt-6 p-5 bg-red-950/20 border border-red-500/20 rounded-2xl flex items-start gap-4 overflow-hidden relative group"
+                    >
+                      <div className="absolute top-0 right-0 p-2 opacity-20 group-hover:opacity-40 transition-opacity">
+                        <ShieldAlert className="text-red-500" size={40} />
+                      </div>
+                      <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center shrink-0">
+                        <AlertCircle className="text-red-500" size={20} />
+                      </div>
+                      <div className="relative z-10">
+                        <h4 className="text-[10px] font-black text-red-500 mb-1 uppercase tracking-[0.3em] flex items-center gap-2">
+                          <span className="w-1 h-1 bg-red-500 rounded-full animate-ping" />
+                          System Breach: AI Engine Fault
+                        </h4>
+                        <p className="text-xs text-red-200/60 leading-relaxed font-mono mt-2 pr-10">
+                          {error}
+                        </p>
+                        <div className="flex gap-4 mt-4">
+                          <button 
+                            onClick={handleGenerate}
+                            className="text-[10px] border border-red-500/30 px-3 py-1.5 rounded-lg text-red-400 font-bold uppercase transition-all hover:bg-red-500 hover:text-white"
+                          >
+                            Re-synthesize
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
               <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-8 min-h-[300px] relative">
@@ -889,64 +965,56 @@ const AIToolkit = () => {
                         </div>
                       )}
 
-                      {activeTab === 'blog' && (
+                      {activeTab === 'summarizer' && (
                         <div className="space-y-8">
-                           <div className="flex justify-between items-start">
-                              <div className="max-w-2xl">
-                                <h4 className="text-blue-500 font-bold text-xs uppercase tracking-[0.2em] mb-2">Generated SEO Article</h4>
-                                <h3 className="text-2xl font-bold text-white mb-4 leading-tight">{result.title}</h3>
-                              </div>
-                              <div className="flex gap-2">
-                                {!isSpeaking ? (
-                                  <button 
-                                    onClick={() => speak(result.content)}
-                                    className="p-3 bg-blue-600/10 border border-blue-500/30 rounded-xl text-blue-400 hover:bg-blue-600 hover:text-white transition-all flex items-center gap-2 text-xs font-bold"
-                                  >
-                                    <Volume2 size={16} /> Listen
-                                  </button>
-                                ) : (
-                                  <button 
-                                    onClick={stopSpeaking}
-                                    className="p-3 bg-red-600/10 border border-red-500/30 rounded-xl text-red-400 hover:bg-red-600 hover:text-white transition-all flex items-center gap-2 text-xs font-bold border-red-500"
-                                  >
-                                    <VolumeX size={16} /> Stop
-                                  </button>
-                                )}
-                              </div>
-                           </div>
+                          <div className="flex justify-between items-center">
+                            <h4 className="text-blue-500 font-bold text-xs uppercase tracking-[0.2em]">Neural Content Synthesis</h4>
+                            <div className="px-3 py-1 bg-blue-500/10 text-blue-400 text-[10px] font-bold uppercase rounded-full tracking-widest border border-blue-500/20">
+                              Sentiment: {result.sentiment}
+                            </div>
+                          </div>
 
-                           <div className="glass-card p-8 border-white/10 bg-white/[0.02]">
-                              <div className="prose prose-invert max-w-none">
-                                {result.content.split('\n').map((para: string, i: number) => (
-                                  <p key={i} className="text-slate-300 text-sm leading-relaxed mb-6 font-light">
-                                    {para}
-                                  </p>
-                                ))}
-                              </div>
-                           </div>
+                          <div className="glass-card p-8 border-white/10 bg-white/[0.02]">
+                            <h5 className="text-white font-bold text-lg mb-4">Executive Summary</h5>
+                            <p className="text-slate-300 text-sm leading-relaxed font-light">
+                              {result.summary}
+                            </p>
+                          </div>
 
-                           <div className="grid md:grid-cols-2 gap-6">
-                              <div className="p-6 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl">
-                                 <h5 className="text-emerald-400 font-bold text-[10px] uppercase tracking-widest mb-4 flex items-center gap-2">
-                                    <Languages size={14} /> Optimized Keywords
-                                 </h5>
-                                 <div className="flex flex-wrap gap-2">
-                                    {result.keywords.map((kw: string, i: number) => (
-                                      <span key={i} className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-[10px] text-emerald-400 font-mono">
-                                        #{kw.replace(/\s+/g, '')}
-                                      </span>
-                                    ))}
-                                 </div>
-                              </div>
-                              <div className="p-6 bg-purple-500/5 border border-purple-500/10 rounded-2xl">
-                                 <h5 className="text-purple-400 font-bold text-[10px] uppercase tracking-widest mb-4 flex items-center gap-2">
-                                    <BookOpen size={14} /> Meta Description
-                                 </h5>
-                                 <p className="text-xs text-slate-400 italic leading-relaxed">
-                                    "{result.metaDescription}"
-                                 </p>
-                              </div>
-                           </div>
+                          <div>
+                            <h4 className="text-purple-500 font-bold text-xs uppercase tracking-[0.2em] mb-4">Key Takeaways</h4>
+                            <div className="space-y-3">
+                              {result.keyTakeaways.map((takeaway: string, i: number) => (
+                                <div key={i} className="p-4 bg-white/5 rounded-xl border border-white/5 flex gap-3 text-sm text-slate-300 items-start">
+                                  <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-purple-500 shrink-0" />
+                                  {takeaway}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="flex gap-4">
+                            <button 
+                              onClick={() => {
+                                if ('speechSynthesis' in window) {
+                                  window.speechSynthesis.cancel();
+                                  const utterance = new SpeechSynthesisUtterance(result.summary);
+                                  window.speechSynthesis.speak(utterance);
+                                }
+                              }}
+                              className="flex-1 p-4 bg-blue-600/10 border border-blue-500/30 rounded-xl text-blue-400 hover:bg-blue-600 hover:text-white transition-all flex items-center justify-center gap-2 text-xs font-bold"
+                            >
+                              <Volume2 size={16} /> Narrate Summary
+                            </button>
+                            <button 
+                              onClick={() => {
+                                navigator.clipboard.writeText(result.summary);
+                              }}
+                              className="p-4 bg-white/5 border border-white/10 rounded-xl text-slate-400 hover:bg-white/10 hover:text-white transition-all flex items-center gap-2 text-xs font-bold"
+                            >
+                              <CheckCircle2 size={16} /> Copy
+                            </button>
+                          </div>
                         </div>
                       )}
                     </motion.div>
@@ -1479,7 +1547,379 @@ const ChatWidget = () => {
   );
 };
 
+const OnboardingTour = ({ onComplete }: { onComplete: () => void }) => {
+  const [step, setStep] = useState(0);
+
+  const steps = [
+    {
+      title: "Neural AI Toolkit",
+      description: "Directly access our most powerful predictive engines to generate content ideas, synthesize audience segments, and perform A/B tests.",
+      target: "#toolkit",
+      icon: <BrainCircuit size={24} className="text-blue-500" />,
+    },
+    {
+      title: "Performance KPIs",
+      description: "Monitor neural efficiency and ROI velocity in real-time. Watch how our AI optimizes your campaign strategy automatically.",
+      target: "#dashboard",
+      icon: <Activity size={24} className="text-emerald-500" />,
+    },
+    {
+      title: "Launch Sequence",
+      description: "Ready to go live? Connect your ecosystem and let our AI-driven strategists map out your migration path to autonomous marketing.",
+      target: "#connect",
+      icon: <Zap size={24} className="text-purple-500" />,
+    },
+  ];
+
+  const handleNext = () => {
+    if (step < steps.length - 1) {
+      setStep(step + 1);
+      const element = document.querySelector(steps[step + 1].target);
+      element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else {
+      onComplete();
+    }
+  };
+
+  const handleSkip = () => onComplete();
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm"
+      >
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0, y: 20 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          className="glass-card w-full max-w-md p-8 border-white/10 shadow-2xl relative overflow-hidden"
+        >
+          <div className="absolute top-0 left-0 w-full h-1 bg-white/5">
+            <motion.div 
+              className="h-full bg-blue-500"
+              initial={{ width: "0%" }}
+              animate={{ width: `${((step + 1) / steps.length) * 100}%` }}
+            />
+          </div>
+
+          <button 
+            onClick={handleSkip}
+            className="absolute top-4 right-4 text-slate-500 hover:text-white transition-colors"
+          >
+            <X size={20} />
+          </button>
+
+          <div className="flex flex-col items-center text-center">
+            <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-6 shadow-xl border border-white/5">
+              {steps[step].icon}
+            </div>
+            
+            <h3 className="text-2xl font-bold text-white mb-3 tracking-tight">
+              {steps[step].title}
+            </h3>
+            
+            <p className="text-slate-400 text-sm leading-relaxed mb-8">
+              {steps[step].description}
+            </p>
+
+            <div className="flex w-full gap-4">
+              <button 
+                onClick={handleSkip}
+                className="flex-1 py-3 px-6 rounded-xl border border-white/10 text-slate-400 hover:bg-white/5 transition-all text-sm font-bold"
+              >
+                Skip 
+              </button>
+              <button 
+                onClick={handleNext}
+                className="flex-1 py-3 px-6 bg-blue-600 rounded-xl text-white hover:bg-blue-500 transition-all text-sm font-bold flex items-center justify-center gap-2"
+              >
+                {step === steps.length - 1 ? 'Get Started' : 'Next Step'}
+                <ArrowRight size={16} />
+              </button>
+            </div>
+
+            <div className="flex gap-1.5 mt-8">
+              {steps.map((_, i) => (
+                <div 
+                  key={i}
+                  className={`h-1 rounded-full transition-all duration-300 ${i === step ? 'w-4 bg-blue-500' : 'w-1 bg-white/10'}`}
+                />
+              ))}
+            </div>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+};
+
+const UserSettings = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) => {
+  const [activeTab, setActiveTab] = useState<'api' | 'preferences' | 'integrations'>('api');
+  const [settings, setSettings] = useState({
+    geminiKey: '••••••••••••••••',
+    hubspotKey: '••••••••••••••••',
+    adNetworkToken: 'flux_ntk_72819201',
+    notifications: true,
+    emailDigest: 'weekly',
+    performanceAlerts: true,
+    dataPrivacy: 'standard'
+  });
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        className="glass-card w-full max-w-4xl h-[700px] flex flex-col overflow-hidden border-white/10 shadow-2xl"
+      >
+        <div className="p-8 border-b border-white/10 flex justify-between items-center bg-white/[0.02]">
+          <div>
+            <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+              <SettingsIcon className="text-blue-500" size={24} />
+              Neural Settings
+            </h2>
+            <p className="text-slate-500 text-xs mt-1 uppercase tracking-widest font-bold">User Identity & Engine Configuration</p>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-xl text-slate-400 transition-all">
+            <X size={24} />
+          </button>
+        </div>
+
+        <div className="flex flex-1 overflow-hidden">
+          {/* Sidebar */}
+          <div className="w-64 border-r border-white/10 p-6 bg-white/[0.01]">
+            <div className="space-y-2">
+              <button
+                onClick={() => setActiveTab('api')}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium ${activeTab === 'api' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+              >
+                <Key size={18} /> API Configuration
+              </button>
+              <button
+                onClick={() => setActiveTab('preferences')}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium ${activeTab === 'preferences' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+              >
+                <Bell size={18} /> Preferences
+              </button>
+              <button
+                onClick={() => setActiveTab('integrations')}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium ${activeTab === 'integrations' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+              >
+                <Database size={18} /> Data Integrations
+              </button>
+            </div>
+
+            <div className="mt-auto pt-40">
+              <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
+                <div className="flex items-center gap-2 mb-2 text-emerald-500">
+                  <Shield size={14} />
+                  <span className="text-[10px] font-bold uppercase tracking-widest">Neural Security</span>
+                </div>
+                <p className="text-[10px] text-slate-500 leading-relaxed">
+                  All keys are encrypted at rest and transmitted over secure neural tunnels.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto p-8 bg-bg/50">
+            {activeTab === 'api' && (
+              <div className="space-y-8">
+                <div>
+                  <h3 className="text-lg font-bold text-white mb-6">Neural Engine Keys</h3>
+                  <div className="space-y-6">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-widest flex justify-between">
+                        Gemini API Key
+                        <span className="text-blue-500">Active</span>
+                      </label>
+                      <div className="relative group">
+                        <input 
+                          type="password" 
+                          value={settings.geminiKey}
+                          readOnly
+                          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-blue-500/50 outline-none"
+                        />
+                        <button className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] uppercase font-bold text-slate-500 hover:text-white">Update</button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-widest flex justify-between">
+                        HubSpot Private Token
+                        <span className="text-emerald-500">Connected</span>
+                      </label>
+                      <div className="relative group">
+                        <input 
+                          type="password" 
+                          value={settings.hubspotKey}
+                          readOnly
+                          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-blue-500/50 outline-none"
+                        />
+                        <button className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] uppercase font-bold text-slate-500 hover:text-white">Update</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-6 bg-blue-500/5 border border-blue-500/10 rounded-2xl">
+                  <h4 className="text-blue-400 font-bold text-xs uppercase tracking-widest mb-3 flex items-center gap-2">
+                    <Sparkles size={14} /> Usage Quota
+                  </h4>
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
+                      <div className="w-[42%] h-full bg-blue-500 rounded-full" />
+                    </div>
+                    <span className="text-xs font-mono text-slate-400">4,281 / 10,000 requests</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'preferences' && (
+              <div className="space-y-8">
+                <div>
+                  <h3 className="text-lg font-bold text-white mb-6">Application Experience</h3>
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
+                      <div>
+                        <div className="font-medium text-white text-sm">Real-time Oscillations</div>
+                        <div className="text-xs text-slate-500">Show visual ripples when AI is processing data</div>
+                      </div>
+                      <button 
+                        onClick={() => setSettings({...settings, notifications: !settings.notifications})}
+                        className={`w-12 h-6 rounded-full transition-all relative ${settings.notifications ? 'bg-blue-600' : 'bg-white/10'}`}
+                      >
+                        <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${settings.notifications ? 'left-7' : 'left-1'}`} />
+                      </button>
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
+                      <div>
+                        <div className="font-medium text-white text-sm">Neural Audio Feedback</div>
+                        <div className="text-xs text-slate-500">Play subtle synth tones during major KPI shifts</div>
+                      </div>
+                      <button 
+                        onClick={() => setSettings({...settings, performanceAlerts: !settings.performanceAlerts})}
+                        className={`w-12 h-6 rounded-full transition-all relative ${settings.performanceAlerts ? 'bg-blue-600' : 'bg-white/10'}`}
+                      >
+                        <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${settings.performanceAlerts ? 'left-7' : 'left-1'}`} />
+                      </button>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Engine Digest Frequency</label>
+                        <p className="text-[10px] text-slate-500 mt-1 mb-4">Choose how often you want to receive neural performance summaries via email.</p>
+                      </div>
+                      <div className="grid grid-cols-3 gap-3">
+                        {[
+                          { label: 'Daily', value: 'daily', desc: 'Every 24h' },
+                          { label: 'Weekly', value: 'weekly', desc: 'Every Monday' },
+                          { label: 'Real-time', value: 'real-time', desc: 'Instant active' }
+                        ].map(freq => (
+                          <button
+                            key={freq.value}
+                            onClick={() => setSettings({...settings, emailDigest: freq.value})}
+                            className={`p-4 rounded-2xl border text-left transition-all relative group ${settings.emailDigest === freq.value ? 'bg-blue-600/10 border-blue-500/50 ring-1 ring-blue-500/50' : 'bg-white/5 border-white/10 hover:border-white/20'}`}
+                          >
+                            <div className={`text-xs font-bold uppercase tracking-wider mb-1 ${settings.emailDigest === freq.value ? 'text-blue-400' : 'text-slate-400'}`}>
+                              {freq.label}
+                            </div>
+                            <div className="text-[10px] text-slate-500 font-medium">{freq.desc}</div>
+                            {settings.emailDigest === freq.value && (
+                              <div className="absolute top-3 right-3 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                                <Check size={10} className="text-white" />
+                              </div>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'integrations' && (
+              <div className="space-y-8">
+                <div>
+                  <h3 className="text-lg font-bold text-white mb-6">Connected Ecosystem</h3>
+                  <div className="grid grid-cols-1 gap-4">
+                    {[
+                      { name: 'Google Ads', status: 'connected', type: 'Ad Network' },
+                      { name: 'Meta Ads', status: 'connected', type: 'Ad Network' },
+                      { name: 'TikTok Ads', status: 'pending', type: 'Ad Network' },
+                      { name: 'Salesforce', status: 'disconnected', type: 'CRM' },
+                      { name: 'Zapier', status: 'connected', type: 'Automation' },
+                    ].map(integration => (
+                      <div key={integration.name} className="flex items-center justify-between p-5 bg-white/5 rounded-2xl border border-white/5">
+                        <div className="flex items-center gap-4">
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-xs ${integration.status === 'connected' ? 'bg-emerald-500/10 text-emerald-500' : integration.status === 'pending' ? 'bg-orange-500/10 text-orange-500' : 'bg-white/10 text-slate-500'}`}>
+                            {integration.name[0]}
+                          </div>
+                          <div>
+                            <div className="font-bold text-white text-sm">{integration.name}</div>
+                            <div className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">{integration.type}</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className={`text-[10px] font-black uppercase tracking-tighter ${integration.status === 'connected' ? 'text-emerald-500' : integration.status === 'pending' ? 'text-orange-500' : 'text-slate-700'}`}>
+                            {integration.status}
+                          </span>
+                          <button className="p-2 hover:bg-white/10 rounded-lg text-slate-500 transition-all">
+                            <SettingsIcon size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="p-6 border-t border-white/10 bg-white/[0.02] flex justify-between items-center px-10">
+          <button className="text-xs text-red-500 font-bold uppercase tracking-widest hover:underline transition-all">
+            Purge Neural Profile
+          </button>
+          <button 
+            onClick={onClose}
+            className="px-8 py-3 bg-blue-600 rounded-xl text-white text-sm font-bold shadow-lg shadow-blue-600/20 hover:bg-blue-500 transition-all active:scale-95"
+          >
+            All Saved
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
 export default function App() {
+  const [showTour, setShowTour] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  useEffect(() => {
+    const tourCompleted = localStorage.getItem('onboarding_completed');
+    if (!tourCompleted) {
+      const timer = setTimeout(() => {
+        setShowTour(true);
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  const completeTour = () => {
+    setShowTour(false);
+    localStorage.setItem('onboarding_completed', 'true');
+  };
+
   return (
     <div className="min-h-screen bg-bg relative selection:bg-blue-500 selection:text-white">
       {/* Background Overlay */}
@@ -1488,7 +1928,7 @@ export default function App() {
         <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-purple-600/5 blur-[150px] rounded-full" />
       </div>
       
-      <Navbar />
+      <Navbar onOpenSettings={() => setIsSettingsOpen(true)} />
       <Hero />
       <Services />
       <AIDashboard />
@@ -1497,6 +1937,15 @@ export default function App() {
       <LeadCapture />
       <Footer />
       <ChatWidget />
+
+      <AnimatePresence>
+        {showTour && <OnboardingTour onComplete={completeTour} />}
+      </AnimatePresence>
+
+      <UserSettings 
+        isOpen={isSettingsOpen} 
+        onClose={() => setIsSettingsOpen(false)} 
+      />
     </div>
   );
 }

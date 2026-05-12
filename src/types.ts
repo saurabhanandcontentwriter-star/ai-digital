@@ -23,13 +23,6 @@ export interface ABTestResult {
   rationale: string;
 }
 
-export interface BlogArticle {
-  title: string;
-  content: string;
-  keywords: string[];
-  metaDescription: string;
-}
-
 export interface CompetitorAnalysis {
   differentiators: string[];
   benchmarks: { metric: string; competitorAvg: string; targetGoal: string }[];
@@ -40,4 +33,10 @@ export interface CompetitorAnalysis {
     opportunities: string[];
     threats: string[];
   };
+}
+
+export interface ContentSummary {
+  summary: string;
+  keyTakeaways: string[];
+  sentiment: string;
 }

@@ -23,235 +23,12 @@ async function startServer() {
   });
 
   // API routes
-  app.use(express.json());
+  app.use(express.json({ limit: '10mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-  app.post('/api/ai/content-ideas', async (req, res) => {
-    try {
-      const { businessDescription } = req.body;
-      const result = await genAI.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: `Generate AI-powered content ideas for this business: ${businessDescription}`,
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              blogPosts: {
-                type: Type.ARRAY,
-                items: {
-                  type: Type.OBJECT,
-                  properties: {
-                    title: { type: Type.STRING },
-                    focus: { type: Type.STRING }
-                  },
-                  required: ["title", "focus"]
-                }
-              },
-              socialMedia: {
-                type: Type.ARRAY,
-                items: {
-                  type: Type.OBJECT,
-                  properties: {
-                    platform: { type: Type.STRING },
-                    content: { type: Type.STRING },
-                    focus: { type: Type.STRING }
-                  },
-                  required: ["platform", "content", "focus"]
-                }
-              },
-              adCopy: {
-                type: Type.ARRAY,
-                items: {
-                  type: Type.OBJECT,
-                  properties: {
-                    platform: { type: Type.STRING },
-                    copy: { type: Type.STRING },
-                    focus: { type: Type.STRING }
-                  },
-                  required: ["platform", "copy", "focus"]
-                }
-              }
-            },
-            required: ["blogPosts", "socialMedia", "adCopy"]
-          },
-          systemInstruction: "You are a senior digital marketing strategist. Generate creative content ideas and explain how AI can be leveraged for each."
-        }
-      });
-      res.json(JSON.parse(result.text));
-    } catch (error) {
-      res.status(500).json({ error: String(error) });
-    }
-  });
-
-  app.post('/api/ai/audience-segments', async (req, res) => {
-    try {
-      const { userData } = req.body;
-      const result = await genAI.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: `Analyze this user data and generate distinct audience segments: ${userData}`,
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                name: { type: Type.STRING },
-                characteristics: { type: Type.STRING },
-                marketingStrategy: { type: Type.STRING }
-              },
-              required: ["name", "characteristics", "marketingStrategy"]
-            }
-          },
-          systemInstruction: "You are an AI data scientist specializing in marketing. Analyze user data and create distinct audience segments."
-        }
-      });
-      res.json(JSON.parse(result.text));
-    } catch (error) {
-      res.status(500).json({ error: String(error) });
-    }
-  });
-
-  app.post('/api/ai/analytics', async (req, res) => {
-    try {
-      const { campaignData } = req.body;
-      const result = await genAI.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: `Analyze this campaign data and provide analytics: ${campaignData}`,
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              trends: { type: Type.ARRAY, items: { type: Type.STRING } },
-              prediction: { type: Type.STRING },
-              recommendations: { type: Type.ARRAY, items: { type: Type.STRING } }
-            },
-            required: ["trends", "prediction", "recommendations"]
-          },
-          systemInstruction: "You are an AI campaign analyst. Identify key trends, predict campaign success, and offer actionable optimization recommendations."
-        }
-      });
-      res.json(JSON.parse(result.text));
-    } catch (error) {
-      res.status(500).json({ error: String(error) });
-    }
-  });
-
-  app.post('/api/ai/ab-test', async (req, res) => {
-    try {
-      const { versionA, versionB, targetAudience } = req.body;
-      const result = await genAI.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: `Compare version A and version B for: ${targetAudience}. A: ${versionA}. B: ${versionB}`,
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              winner: { type: Type.STRING, enum: ["A", "B"] },
-              versionA: {
-                type: Type.OBJECT,
-                properties: {
-                  score: { type: Type.NUMBER },
-                  strengths: { type: Type.ARRAY, items: { type: Type.STRING } },
-                  weaknesses: { type: Type.ARRAY, items: { type: Type.STRING } }
-                },
-                required: ["score", "strengths", "weaknesses"]
-              },
-              versionB: {
-                type: Type.OBJECT,
-                properties: {
-                  score: { type: Type.NUMBER },
-                  strengths: { type: Type.ARRAY, items: { type: Type.STRING } },
-                  weaknesses: { type: Type.ARRAY, items: { type: Type.STRING } }
-                },
-                required: ["score", "strengths", "weaknesses"]
-              },
-              rationale: { type: Type.STRING }
-            },
-            required: ["winner", "versionA", "versionB", "rationale"]
-          },
-          systemInstruction: "You are a senior CRO expert. Analyze two marketing creatives/copies and determine which is likely to perform better."
-        }
-      });
-      res.json(JSON.parse(result.text));
-    } catch (error) {
-      res.status(500).json({ error: String(error) });
-    }
-  });
-
-  app.post('/api/ai/blog-article', async (req, res) => {
-    try {
-      const { topic, keywords } = req.body;
-      const result = await genAI.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: `Write a 700-word SEO optimized blog article about: ${topic}. Targeted keywords: ${keywords}`,
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              title: { type: Type.STRING },
-              content: { type: Type.STRING },
-              keywords: { type: Type.ARRAY, items: { type: Type.STRING } },
-              metaDescription: { type: Type.STRING }
-            },
-            required: ["title", "content", "keywords", "metaDescription"]
-          },
-          systemInstruction: "You are an expert SEO copywriter. Generate a high-quality, engaging blog article of approximately 700 words. Use proper headings (though provide them as plain text/markdown), include the keywords naturally, and write a compelling meta description."
-        }
-      });
-      res.json(JSON.parse(result.text));
-    } catch (error) {
-      res.status(500).json({ error: String(error) });
-    }
-  });
-
-  app.post('/api/ai/competitor-analysis', async (req, res) => {
-    try {
-      const { businessDescription, competitorUrls } = req.body;
-      const result = await genAI.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: `Analyze marketing strategies for this business: ${businessDescription}. Competitors to investigate: ${competitorUrls}`,
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              differentiators: { type: Type.ARRAY, items: { type: Type.STRING } },
-              benchmarks: {
-                type: Type.ARRAY,
-                items: {
-                  type: Type.OBJECT,
-                  properties: {
-                    metric: { type: Type.STRING },
-                    competitorAvg: { type: Type.STRING },
-                    targetGoal: { type: Type.STRING }
-                  },
-                  required: ["metric", "competitorAvg", "targetGoal"]
-                }
-              },
-              entryPoints: { type: Type.ARRAY, items: { type: Type.STRING } },
-              swot: {
-                type: Type.OBJECT,
-                properties: {
-                  strengths: { type: Type.ARRAY, items: { type: Type.STRING } },
-                  weaknesses: { type: Type.ARRAY, items: { type: Type.STRING } },
-                  opportunities: { type: Type.ARRAY, items: { type: Type.STRING } },
-                  threats: { type: Type.ARRAY, items: { type: Type.STRING } }
-                }
-              }
-            },
-            required: ["differentiators", "benchmarks", "entryPoints", "swot"]
-          },
-          systemInstruction: "You are a competitive intelligence analyst. Provide realistic marketing benchmarks and strategic market entry suggestions based on the provided business and competitor context."
-        }
-      });
-      res.json(JSON.parse(result.text));
-    } catch (error) {
-      res.status(500).json({ error: String(error) });
-    }
+  // Health check
+  app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
   });
 
   app.post('/api/leads', async (req, res) => {
@@ -264,8 +41,6 @@ async function startServer() {
     }
 
     try {
-      // In a real scenario, you'd use @hubspot/api-client
-      // Here we use a standard fetch for simplicity
       const response = await fetch('https://api.hubapi.com/crm/v3/objects/contacts', {
         method: 'POST',
         headers: {
@@ -276,8 +51,8 @@ async function startServer() {
           properties: {
             email,
             company,
-            job_function: interest, // Mapping interest to a custom field or standard field
-            lastname: 'AI Lead' // HubSpot requires at least one of these or email
+            job_function: interest,
+            lastname: 'AI Lead'
           }
         })
       });
@@ -295,7 +70,7 @@ async function startServer() {
     console.log('User connected:', socket.id);
 
     socket.on('message', async (msg) => {
-      // Emit the user's message back to everyone (for display)
+      // Emit the user's message back to everyone
       io.emit('message', {
         id: Date.now().toString(),
         text: msg.text,
@@ -303,20 +78,16 @@ async function startServer() {
         timestamp: new Date().toISOString()
       });
 
-      // Simple cache for common queries to reduce latency (Pre-fetching simulation)
-      const commonResponses: Record<string, string> = {
-        "What is Neural ROAS?": "Neural ROAS is our proprietary metric that uses machine learning to predict and optimize Return on Ad Spend in real-time, typically yielding 3-5x better performance than traditional models.",
-        "How does the AI optimize ad spend?": "The AI monitors 100k+ signals per hour across multiple networks, reallocating budget every 12ms to the highest-performing creative-audience pairs.",
-        "Show me a strategy demo": "You can try our AI Strategy Suite above! Simply paste your business description in the Toolkit section to see the engine generate content, audience segments, and analytics.",
-        "Compare with competitors": "Our Competitor Intel tool (available in the Toolkit) analyzes competitor URLs to identify gaps in their strategy and suggest optimal market entry points for your brand."
-      };
-
-      // If it's from the user, generate an AI response
       if (msg.sender === 'user') {
+        const commonResponses: Record<string, string> = {
+          "What is Neural ROAS?": "Neural ROAS is our proprietary metric that uses machine learning to predict and optimize Return on Ad Spend in real-time.",
+          "How does the AI optimize ad spend?": "The AI monitors 100k+ signals per hour across multiple networks, reallocating budget to the highest-performing creative-audience pairs.",
+          "Show me a strategy demo": "You can try our AI Strategy Suite above! Simply paste your business description in the Toolkit section.",
+          "Compare with competitors": "Our Competitor Intel tool (available in the Toolkit) analyzes competitor URLs to identify gaps."
+        };
+
         const cachedResponse = commonResponses[msg.text];
-        
         if (cachedResponse) {
-          // Artificial small delay for realism, but much faster than AI generation
           setTimeout(() => {
             io.emit('message', {
               id: (Date.now() + 1).toString(),
@@ -333,15 +104,13 @@ async function startServer() {
              model: "gemini-3-flash-preview",
              contents: msg.text,
              config: {
-               systemInstruction: "You are Flux AI's neural marketing strategist. You are professional, visionary, and helpful. Keep responses concise (under 3 sentences). You help users understand how AI can transform their digital marketing."
+               systemInstruction: "You are Flux AI's neural marketing strategist. Keep responses concise (under 3 sentences)."
              }
           });
           
-          const text = aiResponse.text;
-          
           io.emit('message', {
             id: (Date.now() + 1).toString(),
-            text,
+            text: aiResponse.text,
             sender: 'agent',
             timestamp: new Date().toISOString()
           });
@@ -349,7 +118,7 @@ async function startServer() {
           console.error('AI Error:', error);
           io.emit('message', {
             id: (Date.now() + 1).toString(),
-            text: "My neural pathways are experiencing a brief fluctuation. Please try again in a moment.",
+            text: "Engine signal fluctuation. Please retry.",
             sender: 'agent',
             timestamp: new Date().toISOString()
           });
